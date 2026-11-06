@@ -1,0 +1,997 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>北京大学2026级护理一班 · 成绩查询系统</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --pku-red:#8B1A1A;--pku-red-light:#A52A2A;--pku-red-dark:#6B0F0F;
+  --gold:#C9A96E;--gold-light:#E8D5B0;
+  --bg:#F5F5F5;--card:#FFFFFF;
+  --text:#333;--text-light:#666;--text-muted:#999;
+  --border:#E0E0E0;--border-light:#F0F0F0;
+  --success:#2E7D32;--warning:#F57F17;--danger:#C62828;--info:#1565C0;
+  --shadow:0 2px 12px rgba(0,0,0,0.08);--shadow-lg:0 8px 32px rgba(0,0,0,0.12);
+  --radius:12px;--radius-sm:8px;--radius-xs:6px;
+  --transition:all 0.3s cubic-bezier(0.4,0,0.2,1);
+}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;background:var(--bg);color:var(--text);line-height:1.6;min-height:100vh}
+a{color:var(--pku-red);text-decoration:none;transition:var(--transition)}
+a:hover{color:var(--pku-red-light)}
+.header{background:linear-gradient(135deg,var(--pku-red) 0%,var(--pku-red-dark) 100%);color:#fff;padding:0;position:sticky;top:0;z-index:100;box-shadow:0 2px 8px rgba(139,26,26,0.3)}
+.header-inner{max-width:1100px;margin:0 auto;padding:16px 24px;display:flex;align-items:center;justify-content:space-between}
+.header .logo{display:flex;align-items:center;gap:14px;cursor:pointer}
+.header .logo-icon{width:44px;height:44px;background:rgba(255,255,255,0.15);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:700;color:var(--gold-light);border:2px solid rgba(255,255,255,0.2)}
+.header h1{font-size:20px;font-weight:600;letter-spacing:0.5px}
+.header .subtitle{font-size:12px;opacity:0.8;margin-top:2px}
+.header nav{display:flex;align-items:center;gap:8px}
+.header nav .nav-btn{padding:8px 16px;border-radius:var(--radius-xs);color:rgba(255,255,255,0.9);font-size:14px;cursor:pointer;transition:var(--transition);border:1px solid transparent;background:none;font-family:inherit}
+.header nav .nav-btn:hover{background:rgba(255,255,255,0.12);color:#fff}
+.header nav .nav-btn.active{background:rgba(255,255,255,0.18);border-color:rgba(255,255,255,0.25);color:#fff}
+.header nav .user-info{display:flex;align-items:center;gap:10px;padding:6px 14px;background:rgba(255,255,255,0.1);border-radius:20px;font-size:13px}
+.header nav .user-info .role-tag{padding:2px 8px;border-radius:10px;font-size:11px;background:var(--gold);color:var(--pku-red-dark);font-weight:600}
+.main{max-width:1100px;margin:0 auto;padding:32px 24px;min-height:calc(100vh - 160px)}
+.card{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:32px;margin-bottom:24px;transition:var(--transition)}
+.card:hover{box-shadow:var(--shadow-lg)}
+.card-title{font-size:20px;font-weight:600;color:var(--pku-red);margin-bottom:20px;padding-bottom:12px;border-bottom:2px solid var(--border-light);display:flex;align-items:center;gap:10px}
+.card-title .icon{font-size:24px}
+.hero{text-align:center;padding:60px 20px;background:linear-gradient(135deg,#fff 0%,#FFF8F0 100%);border-radius:var(--radius);box-shadow:var(--shadow);margin-bottom:32px}
+.hero .hero-icon{font-size:64px;margin-bottom:16px}
+.hero h2{font-size:28px;color:var(--pku-red);margin-bottom:8px;font-weight:700}
+.hero p{color:var(--text-light);font-size:16px;margin-bottom:32px}
+.hero .search-box{max-width:500px;margin:0 auto 24px;position:relative}
+.hero .search-box input{width:100%;padding:14px 20px 14px 48px;border:2px solid var(--border);border-radius:28px;font-size:16px;outline:none;transition:var(--transition);background:#fff;font-family:inherit}
+.hero .search-box input:focus{border-color:var(--pku-red);box-shadow:0 0 0 3px rgba(139,26,26,0.1)}
+.hero .search-box .search-icon{position:absolute;left:18px;top:50%;transform:translateY(-50%);color:var(--text-muted);font-size:18px}
+.hero .search-box .search-btn{position:absolute;right:6px;top:50%;transform:translateY(-50%);padding:8px 20px;background:var(--pku-red);color:#fff;border:none;border-radius:20px;cursor:pointer;font-size:14px;transition:var(--transition)}
+.hero .search-box .search-btn:hover{background:var(--pku-red-light)}
+.hero .quick-links{display:flex;justify-content:center;gap:16px;flex-wrap:wrap}
+.hero .quick-links .ql-btn{padding:10px 24px;border-radius:20px;border:1px solid var(--border);background:#fff;cursor:pointer;font-size:14px;color:var(--text);transition:var(--transition);display:flex;align-items:center;gap:6px;font-family:inherit}
+.hero .quick-links .ql-btn:hover{border-color:var(--pku-red);color:var(--pku-red);background:#FFF5F5}
+.form-container{max-width:440px;margin:0 auto}
+.form-container.wide{max-width:600px}
+.form-group{margin-bottom:20px}
+.form-group label{display:block;font-size:14px;font-weight:500;color:var(--text);margin-bottom:6px}
+.form-group input,.form-group select,.form-group textarea{width:100%;padding:11px 16px;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-size:15px;outline:none;transition:var(--transition);font-family:inherit;background:#fff}
+.form-group input:focus,.form-group select:focus,.form-group textarea:focus{border-color:var(--pku-red);box-shadow:0 0 0 3px rgba(139,26,26,0.08)}
+.form-group .hint{font-size:12px;color:var(--text-muted);margin-top:4px}
+.form-group .input-icon-wrap{position:relative}
+.form-group .input-icon-wrap input{padding-left:42px}
+.form-group .input-icon-wrap .input-icon{position:absolute;left:14px;top:50%;transform:translateY(-50%);color:var(--text-muted)}
+.btn{padding:11px 24px;border-radius:var(--radius-sm);border:none;cursor:pointer;font-size:15px;font-weight:500;transition:var(--transition);display:inline-flex;align-items:center;justify-content:center;gap:8px;font-family:inherit}
+.btn-primary{background:var(--pku-red);color:#fff}
+.btn-primary:hover{background:var(--pku-red-light);transform:translateY(-1px);box-shadow:0 4px 12px rgba(139,26,26,0.3)}
+.btn-secondary{background:#fff;color:var(--text);border:1.5px solid var(--border)}
+.btn-secondary:hover{border-color:var(--pku-red);color:var(--pku-red)}
+.btn-success{background:var(--success);color:#fff}
+.btn-success:hover{background:#388E3C}
+.btn-danger{background:var(--danger);color:#fff}
+.btn-danger:hover{background:#D32F2F}
+.btn-warning{background:var(--warning);color:#fff}
+.btn-sm{padding:6px 14px;font-size:13px;border-radius:var(--radius-xs)}
+.btn-block{width:100%}
+.btn:disabled{opacity:0.5;cursor:not-allowed;transform:none}
+.btn-group{display:flex;gap:10px;margin-top:20px}
+.btn-group .btn{flex:1}
+.table-wrap{overflow-x:auto;border-radius:var(--radius-sm);border:1px solid var(--border)}
+table{width:100%;border-collapse:collapse;font-size:14px}
+thead{background:#FAFAFA}
+th{padding:12px 16px;text-align:left;font-weight:600;color:var(--text);border-bottom:2px solid var(--border);white-space:nowrap}
+td{padding:11px 16px;border-bottom:1px solid var(--border-light);color:var(--text)}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:#FAFAFA}
+.score-cell{font-weight:600;font-size:15px}
+.score-excellent{color:var(--success)}
+.score-good{color:var(--info)}
+.score-pass{color:var(--warning)}
+.score-fail{color:var(--danger)}
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;margin-bottom:24px}
+.stat-card{background:linear-gradient(135deg,#FFF8F0 0%,#fff 100%);border:1px solid var(--gold-light);border-radius:var(--radius-sm);padding:20px;text-align:center}
+.stat-card .stat-value{font-size:28px;font-weight:700;color:var(--pku-red)}
+.stat-card .stat-label{font-size:13px;color:var(--text-muted);margin-top:4px}
+.toast-container{position:fixed;top:80px;right:24px;z-index:1000;display:flex;flex-direction:column;gap:8px}
+.toast{padding:14px 20px;border-radius:var(--radius-sm);color:#fff;font-size:14px;box-shadow:var(--shadow-lg);animation:slideIn 0.3s ease;display:flex;align-items:center;gap:10px;min-width:280px;max-width:400px}
+.toast-success{background:var(--success)}
+.toast-error{background:var(--danger)}
+.toast-info{background:var(--info)}
+.toast-warning{background:var(--warning)}
+@keyframes slideIn{from{transform:translateX(100%);opacity:0}to{transform:translateX(0);opacity:1}}
+@keyframes slideOut{from{transform:translateX(0);opacity:1}to{transform:translateX(100%);opacity:0}}
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:200;display:none;align-items:center;justify-content:center;padding:20px}
+.modal-overlay.show{display:flex}
+.modal{background:#fff;border-radius:var(--radius);padding:32px;max-width:520px;width:100%;max-height:85vh;overflow-y:auto;box-shadow:var(--shadow-lg);animation:scaleIn 0.2s ease}
+.modal-title{font-size:18px;font-weight:600;color:var(--pku-red);margin-bottom:20px;display:flex;align-items:center;justify-content:space-between}
+.modal-title .close-btn{background:none;border:none;font-size:24px;cursor:pointer;color:var(--text-muted);transition:var(--transition);width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center}
+.modal-title .close-btn:hover{background:var(--border-light);color:var(--text)}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+@keyframes scaleIn{from{transform:scale(0.95);opacity:0}to{transform:scale(1);opacity:1}}
+.tabs{display:flex;gap:4px;border-bottom:2px solid var(--border-light);margin-bottom:24px}
+.tab{padding:10px 20px;cursor:pointer;font-size:14px;font-weight:500;color:var(--text-muted);border-bottom:2px solid transparent;margin-bottom:-2px;transition:var(--transition)}
+.tab:hover{color:var(--text)}
+.tab.active{color:var(--pku-red);border-bottom-color:var(--pku-red)}
+.badge{display:inline-block;padding:3px 10px;border-radius:12px;font-size:12px;font-weight:500}
+.badge-success{background:#E8F5E9;color:var(--success)}
+.badge-danger{background:#FFEBEE;color:var(--danger)}
+.badge-info{background:#E3F2FD;color:var(--info)}
+.badge-warning{background:#FFF8E1;color:var(--warning)}
+.empty-state{text-align:center;padding:48px 20px;color:var(--text-muted)}
+.empty-state .empty-icon{font-size:48px;margin-bottom:12px;opacity:0.5}
+.empty-state p{font-size:15px}
+.footer{text-align:center;padding:24px;color:var(--text-muted);font-size:13px;border-top:1px solid var(--border-light);margin-top:40px}
+.student-list-item{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border:1px solid var(--border-light);border-radius:var(--radius-sm);margin-bottom:8px;transition:var(--transition)}
+.student-list-item:hover{border-color:var(--pku-red);background:#FFF8F6}
+.student-list-item .student-info{display:flex;align-items:center;gap:12px;cursor:pointer;flex:1}
+.student-list-item .student-avatar{width:36px;height:36px;border-radius:50%;background:var(--pku-red);color:#fff;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:600;flex-shrink:0}
+.student-list-item .student-meta .name{font-weight:500;font-size:15px}
+.student-list-item .student-meta .id{font-size:12px;color:var(--text-muted)}
+.student-list-item .actions{display:flex;gap:6px;flex-shrink:0}
+.text-center{text-align:center}
+.text-muted{color:var(--text-muted)}
+.text-sm{font-size:13px}
+.mt-8{margin-top:8px}
+.mt-16{margin-top:16px}
+.mt-24{margin-top:24px}
+.mb-8{margin-bottom:8px}
+.mb-16{margin-bottom:16px}
+.mb-24{margin-bottom:24px}
+.flex-between{display:flex;align-items:center;justify-content:space-between}
+.divider{height:1px;background:var(--border-light);margin:20px 0}
+.link-btn{background:none;border:none;color:var(--pku-red);cursor:pointer;font-size:14px;padding:0;text-decoration:underline;font-family:inherit}
+.link-btn:hover{color:var(--pku-red-light)}
+.grade-edit-row{display:flex;gap:10px;align-items:center;margin-bottom:10px;flex-wrap:wrap}
+.grade-edit-row input{flex:1;min-width:120px}
+.grade-edit-row .subject-name{min-width:100px;font-weight:500;font-size:14px;color:var(--text)}
+.loading-overlay{position:fixed;inset:0;background:rgba(255,255,255,0.8);z-index:300;display:none;align-items:center;justify-content:center}
+.loading-overlay.show{display:flex}
+.spinner{width:40px;height:40px;border:4px solid var(--border);border-top-color:var(--pku-red);border-radius:50%;animation:spin 0.8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.setup-box{max-width:560px;margin:40px auto}
+.setup-box .step{padding:16px;background:#FAFAFA;border-radius:var(--radius-sm);margin-bottom:12px;border-left:4px solid var(--pku-red)}
+.setup-box .step h4{margin-bottom:6px;color:var(--pku-red)}
+.setup-box .step p{font-size:14px;color:var(--text-light)}
+.setup-box .step code{background:#EEE;padding:2px 6px;border-radius:4px;font-size:13px}
+.sql-block{background:#1E1E1E;color:#D4D4D4;padding:16px;border-radius:var(--radius-sm);font-family:'Courier New',monospace;font-size:12px;line-height:1.6;overflow-x:auto;white-space:pre;margin:12px 0;max-height:300px;overflow-y:auto}
+.copy-btn{padding:4px 12px;background:var(--pku-red);color:#fff;border:none;border-radius:4px;cursor:pointer;font-size:12px;font-family:inherit}
+.copy-btn:hover{background:var(--pku-red-light)}
+@media(max-width:768px){
+  .header-inner{flex-direction:column;gap:12px;text-align:center}
+  .header nav{flex-wrap:wrap;justify-content:center}
+  .hero{padding:40px 16px}
+  .hero h2{font-size:22px}
+  .main{padding:20px 16px}
+  .card{padding:24px 20px}
+  .stats-grid{grid-template-columns:repeat(2,1fr)}
+  .btn-group{flex-direction:column}
+  .hero .quick-links{flex-direction:column;align-items:center}
+  .student-list-item{flex-direction:column;gap:10px;align-items:flex-start}
+  .student-list-item .actions{align-self:flex-end}
+}
+.page{animation:pageFadeIn 0.3s ease}
+@keyframes pageFadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+</style>
+</head>
+<body>
+
+<header class="header">
+  <div class="header-inner">
+    <div class="logo" onclick="navigate('home')">
+      <div class="logo-icon">护</div>
+      <div>
+        <h1>成绩查询系统</h1>
+        <div class="subtitle">北京大学护理学院 2026级护理一班</div>
+      </div>
+    </div>
+    <nav id="nav-area"></nav>
+  </div>
+</header>
+
+<div class="main" id="app"></div>
+
+<div class="footer">
+  <p>北京大学护理学院 &copy; 2026 &nbsp;|&nbsp; 2026级护理一班成绩查询系统</p>
+  <p class="text-sm mt-8">数据由管理员统一录入 · 托管于 GitHub Pages</p>
+</div>
+
+<div class="toast-container" id="toast-container"></div>
+<div class="modal-overlay" id="modal-overlay" onclick="if(event.target===this)closeModal()"></div>
+<div class="loading-overlay" id="loading"><div class="spinner"></div></div>
+
+<script>
+// =====================================================
+//  Supabase 配置（首次访问时通过向导填写）
+// =====================================================
+let supabase = null;
+const CFG_KEY = 'pku_sb_cfg';
+const SESS_KEY = 'pku_sess';
+const DEFAULT_SUBJECTS = ['护理学导论','人体解剖学','组织胚胎学','生理学','生物化学','病理学','药理学','基础护理学','健康评估','内科护理学','外科护理学','妇产科护理学','儿科护理学','心理学基础','英语','计算机基础','体育','思想政治理论'];
+const DEFAULT_QUESTIONS = ['我的身份证号后六位是什么？','我的高考准考证号后四位是什么？','我的手机号码后四位是什么？','我母亲的生日是什么？（格式：YYYYMMDD）'];
+
+let currentPage = 'home';
+
+// =====================================================
+//  工具函数
+// =====================================================
+function showLoading(){ document.getElementById('loading').classList.add('show') }
+function hideLoading(){ document.getElementById('loading').classList.remove('show') }
+function showToast(msg, type='info'){
+  const c = document.getElementById('toast-container');
+  const icons = {success:'✓',error:'✕',info:'ℹ',warning:'⚠'};
+  const t = document.createElement('div');
+  t.className = `toast toast-${type}`;
+  t.innerHTML = `<span>${icons[type]||'ℹ'}</span><span>${msg}</span>`;
+  c.appendChild(t);
+  setTimeout(()=>{t.style.animation='slideOut 0.3s ease forwards';setTimeout(()=>t.remove(),300)},3000);
+}
+function showModal(html){
+  const m = document.getElementById('modal-overlay');
+  m.innerHTML = `<div class="modal">${html}</div>`;
+  m.classList.add('show');
+}
+function closeModal(){ document.getElementById('modal-overlay').classList.remove('show') }
+function simpleHash(s){ let h=0; for(let i=0;i<s.length;i++){h=((h<<5)-h)+s.charCodeAt(i);h&=h;} return 'h'+Math.abs(h).toString(36)+s.length; }
+function getSession(){ try{return JSON.parse(sessionStorage.getItem(SESS_KEY))}catch{return null} }
+function saveSession(s){ sessionStorage.setItem(SESS_KEY, JSON.stringify(s)) }
+function clearSession(){ sessionStorage.removeItem(SESS_KEY) }
+function getCfg(){ try{return JSON.parse(localStorage.getItem(CFG_KEY))}catch{return null} }
+function saveCfg(c){ localStorage.setItem(CFG_KEY, JSON.stringify(c)) }
+
+// =====================================================
+//  Supabase 数据库操作
+// =====================================================
+async function dbRegisterProfile(studentId, name, pwdHash, sqQuestion, sqAnswerHash){
+  const {data,error} = await supabase.from('profiles').insert({
+    student_id: studentId, name, password_hash: pwdHash,
+    security_question: sqQuestion, security_answer_hash: sqAnswerHash, role:'student'
+  }).select();
+  if(error) throw error;
+  return data[0];
+}
+async function dbGetProfile(studentId){
+  const {data,error} = await supabase.from('profiles').select('*').eq('student_id', studentId).single();
+  if(error && error.code !== 'PGRST116') throw error; // PGRST116 = not found
+  return data;
+}
+async function dbGetAllStudents(){
+  const {data,error} = await supabase.from('profiles').select('*').eq('role','student').order('student_id');
+  if(error) throw error;
+  return data || [];
+}
+async function dbGetGrades(studentId){
+  const {data,error} = await supabase.from('grades').select('*').eq('student_id', studentId);
+  if(error) throw error;
+  return data || [];
+}
+async function dbGetAllGrades(){
+  const {data,error} = await supabase.from('grades').select('*');
+  if(error) throw error;
+  return data || [];
+}
+async function dbUpsertGrade(studentId, subject, score){
+  const {data,error} = await supabase.from('grades').upsert(
+    {student_id: studentId, subject, score},
+    {onConflict: 'student_id,subject'}
+  ).select();
+  if(error) throw error;
+  return data;
+}
+async function dbDeleteGrades(studentId){
+  const {error} = await supabase.from('grades').delete().eq('student_id', studentId);
+  if(error) throw error;
+}
+async function dbDeleteProfile(studentId){
+  await dbDeleteGrades(studentId);
+  const {error} = await supabase.from('profiles').delete().eq('student_id', studentId);
+  if(error) throw error;
+}
+async function dbUpdatePassword(studentId, newPwdHash){
+  const {error} = await supabase.from('profiles').update({password_hash: newPwdHash}).eq('student_id', studentId);
+  if(error) throw error;
+}
+async function dbGetStats(){
+  const students = await dbGetAllStudents();
+  const allGrades = await dbGetAllGrades();
+  return { studentCount: students.length, gradeRecordCount: allGrades.length };
+}
+
+// =====================================================
+//  导航
+// =====================================================
+function navigate(page){
+  currentPage = page;
+  renderNav();
+  renderPage();
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+function renderNav(){
+  const nav = document.getElementById('nav-area');
+  const sess = getSession();
+  if(sess){
+    nav.innerHTML = `
+      <div class="user-info">
+        <span>${sess.name}</span>
+        <span class="role-tag">${sess.role==='admin'?'管理员':'学生'}</span>
+      </div>
+      <button class="nav-btn ${currentPage==='dashboard'?'active':''}" onclick="navigate('dashboard')">成绩查询</button>
+      ${sess.role==='admin'?`<button class="nav-btn ${currentPage==='admin'?'active':''}" onclick="navigate('admin')">成绩管理</button>`:''}
+      <button class="nav-btn" onclick="doLogout()">退出登录</button>`;
+  } else {
+    nav.innerHTML = `
+      <button class="nav-btn ${currentPage==='home'?'active':''}" onclick="navigate('home')">首页</button>
+      <button class="nav-btn ${currentPage==='login'?'active':''}" onclick="navigate('login')">登录</button>
+      <button class="nav-btn ${currentPage==='register'?'active':''}" onclick="navigate('register')">注册</button>`;
+  }
+}
+
+// =====================================================
+//  认证处理
+// =====================================================
+async function doLogin(e){
+  e.preventDefault();
+  showLoading();
+  try {
+    const sid = document.getElementById('login-id').value.trim();
+    const pwd = document.getElementById('login-pwd').value;
+    const role = document.getElementById('login-role').value;
+    if(!sid||!pwd){ showToast('请填写完整信息','warning'); hideLoading(); return; }
+
+    if(role==='admin'){
+      const adminPwd = localStorage.getItem('pku_admin_pwd') || 'admin123';
+      if(sid==='admin' && pwd===adminPwd){
+        saveSession({studentId:'admin',name:'管理员',role:'admin'});
+        showToast('管理员登录成功','success');
+        navigate('admin');
+      } else { showToast('管理员账号或密码错误','error'); }
+      hideLoading(); return;
+    }
+
+    const profile = await dbGetProfile(sid);
+    if(!profile){ showToast('学号不存在，请先注册','error'); hideLoading(); return; }
+    if(profile.password_hash !== simpleHash(pwd)){ showToast('密码错误','error'); hideLoading(); return; }
+
+    saveSession({studentId:profile.student_id, name:profile.name, role:'student'});
+    showToast(`欢迎回来，${profile.name}！`,'success');
+    navigate('dashboard');
+  } catch(err){
+    console.error(err);
+    showToast('登录失败：'+err.message,'error');
+  }
+  hideLoading();
+}
+
+async function doRegister(e){
+  e.preventDefault();
+  showLoading();
+  try {
+    const sid = document.getElementById('reg-id').value.trim();
+    const name = document.getElementById('reg-name').value.trim();
+    const pwd = document.getElementById('reg-pwd').value;
+    const pwd2 = document.getElementById('reg-pwd-confirm').value;
+    const sqType = document.getElementById('reg-sq-type').value;
+    const sqCustom = document.getElementById('reg-sq-custom').value.trim();
+    const sqAnswer = document.getElementById('reg-sq-answer').value.trim();
+
+    if(!sid||!name||!pwd||!sqAnswer){ showToast('请填写所有必填项','warning'); hideLoading(); return; }
+    if(pwd.length<6){ showToast('密码至少6位','warning'); hideLoading(); return; }
+    if(pwd!==pwd2){ showToast('两次密码不一致','warning'); hideLoading(); return; }
+
+    const existing = await dbGetProfile(sid);
+    if(existing){ showToast('该学号已注册','error'); hideLoading(); return; }
+
+    const question = sqType==='custom' ? (sqCustom||'自定义问题') : sqType;
+    await dbRegisterProfile(sid, name, simpleHash(pwd), question, simpleHash(sqAnswer.toLowerCase()));
+    saveSession({studentId:sid, name, role:'student'});
+    showToast('注册成功！','success');
+    navigate('dashboard');
+  } catch(err){
+    console.error(err);
+    showToast('注册失败：'+err.message,'error');
+  }
+  hideLoading();
+}
+
+async function doForgot(e){
+  e.preventDefault();
+  showLoading();
+  try {
+    const step = document.getElementById('forgot-step').value;
+    if(step==='1'){
+      const sid = document.getElementById('forgot-id').value.trim();
+      if(!sid){ showToast('请输入学号','warning'); hideLoading(); return; }
+      const profile = await dbGetProfile(sid);
+      if(!profile){ showToast('学号不存在','error'); hideLoading(); return; }
+      document.getElementById('forgot-sid-hidden').value = sid;
+      document.getElementById('forgot-q-display').textContent = profile.security_question;
+      document.getElementById('forgot-step1').style.display = 'none';
+      document.getElementById('forgot-step2').style.display = 'block';
+      document.getElementById('forgot-step').value = '2';
+    } else {
+      const sid = document.getElementById('forgot-sid-hidden').value;
+      const answer = document.getElementById('forgot-answer').value.trim();
+      const newPwd = document.getElementById('forgot-new-pwd').value;
+      const confirmPwd = document.getElementById('forgot-confirm-pwd').value;
+      if(!answer||!newPwd){ showToast('请填写完整','warning'); hideLoading(); return; }
+      if(newPwd.length<6){ showToast('密码至少6位','warning'); hideLoading(); return; }
+      if(newPwd!==confirmPwd){ showToast('两次密码不一致','warning'); hideLoading(); return; }
+
+      const profile = await dbGetProfile(sid);
+      if(profile.security_answer_hash !== simpleHash(answer.toLowerCase())){
+        showToast('密保答案错误','error'); hideLoading(); return;
+      }
+      await dbUpdatePassword(sid, simpleHash(newPwd));
+      showToast('密码重置成功！请重新登录','success');
+      navigate('login');
+    }
+  } catch(err){
+    console.error(err);
+    showToast('操作失败：'+err.message,'error');
+  }
+  hideLoading();
+}
+
+function doLogout(){ clearSession(); showToast('已退出','info'); navigate('home'); }
+function toggleCustomSQ(){
+  const s = document.getElementById('reg-sq-type');
+  const w = document.getElementById('reg-sq-custom-wrap');
+  w.style.display = s.value==='custom' ? 'block' : 'none';
+}
+
+// =====================================================
+//  页面渲染
+// =====================================================
+function renderPage(){
+  const app = document.getElementById('app');
+  const sess = getSession();
+  switch(currentPage){
+    case 'home': app.innerHTML = pageHome(); break;
+    case 'setup': app.innerHTML = pageSetup(); break;
+    case 'login': app.innerHTML = pageLogin(); break;
+    case 'register': app.innerHTML = pageRegister(); break;
+    case 'forgot': app.innerHTML = pageForgot(); break;
+    case 'dashboard':
+      if(!sess){navigate('login');return;}
+      if(sess.role==='admin'){navigate('admin');return;}
+      renderDashboard(app, sess.studentId);
+      break;
+    case 'admin':
+      if(!sess||sess.role!=='admin'){navigate('login');return;}
+      renderAdmin(app);
+      break;
+    default: app.innerHTML = pageHome();
+  }
+}
+
+// ---------- 首页 ----------
+function pageHome(){
+  return `<div class="page">
+    <div class="hero">
+      <div class="hero-icon">🎓</div>
+      <h2>北京大学2026级护理一班</h2>
+      <p>成绩查询系统 — 登录后可查询个人各科成绩</p>
+      <div class="search-box">
+        <span class="search-icon">🔍</span>
+        <input type="text" id="home-search" placeholder="输入学号或姓名查询成绩..." onkeydown="if(event.key==='Enter')handleHomeSearch()">
+        <button class="search-btn" onclick="handleHomeSearch()">查询</button>
+      </div>
+      <div class="quick-links">
+        <button class="ql-btn" onclick="navigate('login')">🔑 学生登录</button>
+        <button class="ql-btn" onclick="navigate('register')">📝 注册账号</button>
+        <button class="ql-btn" onclick="navigate('forgot')">🔒 找回密码</button>
+        <button class="ql-btn" onclick="showAdminLogin()">⚙️ 管理员入口</button>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title"><span class="icon">📢</span> 系统公告</div>
+      <p style="color:var(--text-light);line-height:1.8">
+        欢迎使用北京大学护理学院2026级护理一班成绩查询系统。<br>
+        请同学们使用学号注册账号后查询个人成绩。成绩由管理员统一录入，如有疑问请联系学习委员或辅导员。<br>
+        <strong>首次使用请先注册账号</strong>，注册时需设置密码及密保问题，以便后续找回密码。
+      </p>
+    </div>
+    <div class="card">
+      <div class="card-title"><span class="icon">📖</span> 使用说明</div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:20px">
+        <div style="padding:16px;background:#FFF8F0;border-radius:var(--radius-sm)">
+          <h4 style="margin-bottom:8px;color:var(--pku-red)">📋 注册登录</h4>
+          <p class="text-sm text-muted">使用学号注册，设置密码和密保问题，即可登录查看成绩。</p>
+        </div>
+        <div style="padding:16px;background:#F0F8FF;border-radius:var(--radius-sm)">
+          <h4 style="margin-bottom:8px;color:var(--info)">🔍 查询成绩</h4>
+          <p class="text-sm text-muted">登录后自动展示个人所有科目成绩及等级评定。</p>
+        </div>
+        <div style="padding:16px;background:#F0FFF0;border-radius:var(--radius-sm)">
+          <h4 style="margin-bottom:8px;color:var(--success)">🔒 找回密码</h4>
+          <p class="text-sm text-muted">忘记密码？通过密保问题验证身份后即可重置。</p>
+        </div>
+      </div>
+    </div>
+  </div>`;
+}
+
+// ---------- 登录 ----------
+function pageLogin(){
+  return `<div class="page"><div class="card form-container" style="margin-top:40px">
+    <div class="card-title"><span class="icon">🔑</span> 用户登录</div>
+    <form onsubmit="doLogin(event)">
+      <div class="form-group"><label>登录身份</label>
+        <select id="login-role"><option value="student">学生</option><option value="admin">管理员</option></select></div>
+      <div class="form-group"><label>学号 / 账号</label>
+        <div class="input-icon-wrap"><span class="input-icon">👤</span>
+        <input type="text" id="login-id" placeholder="请输入学号" autocomplete="username"></div></div>
+      <div class="form-group"><label>密码</label>
+        <div class="input-icon-wrap"><span class="input-icon">🔒</span>
+        <input type="password" id="login-pwd" placeholder="请输入密码" autocomplete="current-password"></div></div>
+      <button type="submit" class="btn btn-primary btn-block">登 录</button>
+    </form>
+    <div class="divider"></div>
+    <div style="display:flex;justify-content:space-between">
+      <button class="link-btn" onclick="navigate('forgot')">忘记密码？</button>
+      <button class="link-btn" onclick="navigate('register')">没有账号？去注册</button>
+    </div>
+  </div></div>`;
+}
+
+// ---------- 注册 ----------
+function pageRegister(){
+  const opts = DEFAULT_QUESTIONS.map(q=>`<option value="${q}">${q}</option>`).join('');
+  return `<div class="page"><div class="card form-container" style="margin-top:20px">
+    <div class="card-title"><span class="icon">📝</span> 注册账号</div>
+    <form onsubmit="doRegister(event)">
+      <div class="form-group"><label>学号 *</label><input type="text" id="reg-id" placeholder="请输入学号"></div>
+      <div class="form-group"><label>姓名 *</label><input type="text" id="reg-name" placeholder="请输入真实姓名"></div>
+      <div class="form-group"><label>设置密码 *</label><input type="password" id="reg-pwd" placeholder="至少6位" autocomplete="new-password"></div>
+      <div class="form-group"><label>确认密码 *</label><input type="password" id="reg-pwd-confirm" placeholder="再次输入密码" autocomplete="new-password"></div>
+      <div class="divider"></div>
+      <div class="form-group"><label>密保问题 *</label>
+        <select id="reg-sq-type" onchange="toggleCustomSQ()">${opts}<option value="custom">自定义问题...</option></select></div>
+      <div class="form-group" id="reg-sq-custom-wrap" style="display:none"><label>自定义密保问题</label><input type="text" id="reg-sq-custom" placeholder="输入自定义问题"></div>
+      <div class="form-group"><label>密保答案 *</label><input type="text" id="reg-sq-answer" placeholder="请牢记答案，用于找回密码"><div class="hint">答案不区分大小写</div></div>
+      <button type="submit" class="btn btn-primary btn-block">注 册</button>
+    </form>
+    <div class="divider"></div>
+    <div class="text-center"><span class="text-muted text-sm">已有账号？</span><button class="link-btn" onclick="navigate('login')">去登录</button></div>
+  </div></div>`;
+}
+
+// ---------- 找回密码 ----------
+function pageForgot(){
+  return `<div class="page"><div class="card form-container" style="margin-top:40px">
+    <div class="card-title"><span class="icon">🔒</span> 找回密码</div>
+    <input type="hidden" id="forgot-step" value="1">
+    <input type="hidden" id="forgot-sid-hidden" value="">
+    <div id="forgot-step1">
+      <div class="form-group"><label>请输入学号</label><input type="text" id="forgot-id" placeholder="注册时的学号"></div>
+      <button class="btn btn-primary btn-block" onclick="doForgot(event)">下一步</button>
+    </div>
+    <div id="forgot-step2" style="display:none">
+      <div class="form-group"><label>密保问题</label><div id="forgot-q-display" style="padding:12px;background:#FFF8F0;border-radius:var(--radius-sm);color:var(--pku-red);font-weight:500"></div></div>
+      <div class="form-group"><label>密保答案</label><input type="text" id="forgot-answer" placeholder="输入答案"></div>
+      <div class="form-group"><label>新密码</label><input type="password" id="forgot-new-pwd" placeholder="至少6位" autocomplete="new-password"></div>
+      <div class="form-group"><label>确认新密码</label><input type="password" id="forgot-confirm-pwd" placeholder="再次输入" autocomplete="new-password"></div>
+      <button class="btn btn-primary btn-block" onclick="doForgot(event)">重置密码</button>
+    </div>
+    <div class="divider"></div>
+    <div class="text-center"><button class="link-btn" onclick="navigate('login')">返回登录</button></div>
+  </div></div>`;
+}
+
+// ---------- 学生仪表盘 ----------
+async function renderDashboard(container, studentId){
+  showLoading();
+  try {
+    const profile = await dbGetProfile(studentId);
+    if(!profile){ container.innerHTML='<div class="empty-state"><p>用户不存在</p></div>'; hideLoading(); return; }
+    const gradeRows = await dbGetGrades(studentId);
+    const grades = {};
+    gradeRows.forEach(r=>{ grades[r.subject] = r.score; });
+    const subjects = Object.keys(grades);
+    const total = subjects.reduce((s,k)=>s+(parseFloat(grades[k])||0),0);
+    const avg = subjects.length ? (total/subjects.length).toFixed(1) : '--';
+    const max = subjects.length ? Math.max(...subjects.map(k=>parseFloat(grades[k])||0)) : '--';
+    const min = subjects.length ? Math.min(...subjects.map(k=>parseFloat(grades[k])||0)) : '--';
+    const pass = subjects.filter(k=>(parseFloat(grades[k])||0)>=60).length;
+
+    let tableHTML;
+    if(!subjects.length){
+      tableHTML = '<div class="empty-state"><div class="empty-icon">📭</div><p>暂无成绩数据，请等待管理员录入</p></div>';
+    } else {
+      tableHTML = `<div class="table-wrap"><table>
+        <thead><tr><th>序号</th><th>科目</th><th>成绩</th><th>等级</th></tr></thead><tbody>
+        ${subjects.map((subj,i)=>{
+          const sc = parseFloat(grades[subj]);
+          const cls = sc>=90?'score-excellent':sc>=80?'score-good':sc>=60?'score-pass':'score-fail';
+          const lvl = sc>=90?'优秀':sc>=80?'良好':sc>=70?'中等':sc>=60?'及格':'不及格';
+          const bc = sc>=90?'badge-success':sc>=60?'badge-info':'badge-danger';
+          return `<tr><td>${i+1}</td><td>${subj}</td><td class="score-cell ${cls}">${isNaN(sc)?'--':sc}</td><td><span class="badge ${bc}">${lvl}</span></td></tr>`;
+        }).join('')}
+        </tbody></table></div>`;
+    }
+
+    container.innerHTML = `<div class="page"><div class="card">
+      <div class="flex-between mb-24">
+        <div class="card-title" style="margin-bottom:0;border-bottom:none;padding-bottom:0"><span class="icon">📊</span> 我的成绩单</div>
+        <div class="text-sm text-muted">学号：${studentId}</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:16px;margin-bottom:24px;padding:16px;background:#FAFAFA;border-radius:var(--radius-sm)">
+        <div style="width:48px;height:48px;border-radius:50%;background:var(--pku-red);color:#fff;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:600">${profile.name[0]}</div>
+        <div><div style="font-size:18px;font-weight:600">${profile.name}</div><div class="text-sm text-muted">北京大学护理学院 · 2026级护理一班</div></div>
+      </div>
+      ${subjects.length?`<div class="stats-grid">
+        <div class="stat-card"><div class="stat-value">${avg}</div><div class="stat-label">平均分</div></div>
+        <div class="stat-card"><div class="stat-value">${max}</div><div class="stat-label">最高分</div></div>
+        <div class="stat-card"><div class="stat-value">${min}</div><div class="stat-label">最低分</div></div>
+        <div class="stat-card"><div class="stat-value">${pass}/${subjects.length}</div><div class="stat-label">及格科目</div></div>
+      </div>`:''}
+      ${tableHTML}
+    </div></div>`;
+  } catch(err){
+    console.error(err);
+    container.innerHTML = `<div class="empty-state"><div class="empty-icon">⚠️</div><p>加载失败：${err.message}</p></div>`;
+  }
+  hideLoading();
+}
+
+// ---------- 管理员 ----------
+async function renderAdmin(container){
+  showLoading();
+  try {
+    const students = await dbGetAllStudents();
+    const allGrades = await dbGetAllGrades();
+    const gradeMap = {};
+    allGrades.forEach(g=>{
+      if(!gradeMap[g.student_id]) gradeMap[g.student_id]={};
+      gradeMap[g.student_id][g.subject] = g.score;
+    });
+
+    container.innerHTML = `<div class="page">
+      <div class="card">
+        <div class="card-title"><span class="icon">⚙️</span> 管理员控制台</div>
+        <div class="stats-grid">
+          <div class="stat-card"><div class="stat-value">${students.length}</div><div class="stat-label">注册学生数</div></div>
+          <div class="stat-card"><div class="stat-value">${Object.keys(gradeMap).length}</div><div class="stat-label">已录入成绩</div></div>
+          <div class="stat-card"><div class="stat-value">${allGrades.length}</div><div class="stat-label">成绩记录总数</div></div>
+        </div>
+        <div class="btn-group" style="margin-bottom:24px;flex-wrap:wrap">
+          <button class="btn btn-primary" onclick="showAddStudentModal()">➕ 添加学生</button>
+          <button class="btn btn-secondary" onclick="showBatchAddModal()">📋 批量添加</button>
+          <button class="btn btn-secondary" onclick="showChangePwdModal()">🔑 修改管理员密码</button>
+          <button class="btn btn-secondary" onclick="exportData()">📤 导出数据</button>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title"><span class="icon">👥</span> 学生成绩管理</div>
+        <div class="form-group" style="max-width:300px;margin-bottom:16px">
+          <input type="text" id="admin-search" placeholder="🔍 搜索学生..." oninput="filterAdminList()">
+        </div>
+        <div id="admin-student-list">
+          ${students.length===0?'<div class="empty-state"><div class="empty-icon">👤</div><p>暂无注册学生</p></div>':
+            students.map(u=>{
+              const gc = (gradeMap[u.student_id]||{});
+              const sc = Object.keys(gc).length;
+              return `<div class="student-list-item" data-name="${u.name}" data-id="${u.student_id}">
+                <div class="student-info" onclick="showGradeModal('${u.student_id}')">
+                  <div class="student-avatar">${u.name[0]}</div>
+                  <div class="student-meta"><div class="name">${u.name}</div><div class="id">学号：${u.student_id} · 已录 ${sc} 科</div></div>
+                </div>
+                <div class="actions">
+                  <button class="btn btn-sm btn-primary" onclick="showGradeModal('${u.student_id}')">录入/编辑</button>
+                  <button class="btn btn-sm btn-danger" onclick="deleteStudent('${u.student_id}','${u.name}')">删除</button>
+                </div>
+              </div>`;
+            }).join('')
+          }
+        </div>
+      </div>
+    </div>`;
+  } catch(err){
+    console.error(err);
+    container.innerHTML = `<div class="empty-state"><div class="empty-icon">⚠️</div><p>加载失败：${err.message}</p></div>`;
+  }
+  hideLoading();
+}
+
+function filterAdminList(){
+  const kw = document.getElementById('admin-search').value.trim().toLowerCase();
+  document.querySelectorAll('.student-list-item').forEach(item=>{
+    const n = (item.getAttribute('data-name')||'').toLowerCase();
+    const id = (item.getAttribute('data-id')||'').toLowerCase();
+    item.style.display = (!kw||n.includes(kw)||id.includes(kw))?'flex':'none';
+  });
+}
+
+// ---------- 管理员弹窗 ----------
+function showAdminLogin(){
+  showModal(`<div class="modal-title"><span>⚙️ 管理员登录</span><button class="close-btn" onclick="closeModal()">&times;</button></div>
+    <form onsubmit="handleAdminModalLogin(event)">
+      <div class="form-group"><label>管理员账号</label><input type="text" id="modal-admin-id" value="admin"></div>
+      <div class="form-group"><label>密码</label><input type="password" id="modal-admin-pwd" placeholder="管理员密码"><div class="hint">默认密码：admin123</div></div>
+      <button type="submit" class="btn btn-primary btn-block">登 录</button>
+    </form>`);
+}
+function handleAdminModalLogin(e){
+  e.preventDefault();
+  const id = document.getElementById('modal-admin-id').value.trim();
+  const pwd = document.getElementById('modal-admin-pwd').value;
+  const adminPwd = localStorage.getItem('pku_admin_pwd') || 'admin123';
+  if(id==='admin' && pwd===adminPwd){
+    saveSession({studentId:'admin',name:'管理员',role:'admin'});
+    closeModal(); showToast('管理员登录成功','success'); navigate('admin');
+  } else { showToast('账号或密码错误','error'); }
+}
+
+// ---------- 成绩录入/编辑 ----------
+async function showGradeModal(studentId){
+  showLoading();
+  try {
+    const profile = await dbGetProfile(studentId);
+    const gradeRows = await dbGetGrades(studentId);
+    const current = {};
+    gradeRows.forEach(r=>{ current[r.subject] = r.score; });
+    const allSubjects = [...new Set([...DEFAULT_SUBJECTS, ...Object.keys(current)])];
+
+    showModal(`<div class="modal-title"><span>📝 ${profile.name} 的成绩</span><button class="close-btn" onclick="closeModal()">&times;</button></div>
+      <div style="margin-bottom:16px;padding:12px;background:#FAFAFA;border-radius:var(--radius-sm)">
+        <span class="text-muted">学号：</span><strong>${studentId}</strong> &nbsp; <span class="text-muted">姓名：</span><strong>${profile.name}</strong>
+      </div>
+      <div id="grade-edit-area">
+        ${allSubjects.map(subj=>`<div class="grade-edit-row">
+          <span class="subject-name">${subj}</span>
+          <input type="number" min="0" max="100" step="0.1" placeholder="0-100" value="${current[subj]!==undefined?current[subj]:''}" data-subject="${subj}" class="grade-input">
+        </div>`).join('')}
+      </div>
+      <div class="divider"></div>
+      <div class="form-group"><label>添加自定义科目</label>
+        <div style="display:flex;gap:8px"><input type="text" id="custom-subj" placeholder="科目名称"><button class="btn btn-sm btn-secondary" onclick="addCustomSubject()">添加</button></div>
+      </div>
+      <div class="btn-group">
+        <button class="btn btn-success" onclick="saveGrades('${studentId}')">💾 保存成绩</button>
+        <button class="btn btn-secondary" onclick="closeModal()">取消</button>
+      </div>`);
+  } catch(err){ showToast('加载失败：'+err.message,'error'); }
+  hideLoading();
+}
+
+function addCustomSubject(){
+  const inp = document.getElementById('custom-subj');
+  const name = inp.value.trim();
+  if(!name){showToast('请输入科目名称','warning');return;}
+  const area = document.getElementById('grade-edit-area');
+  if(area.querySelector(`[data-subject="${name}"]`)){showToast('该科目已存在','warning');return;}
+  const row = document.createElement('div');
+  row.className = 'grade-edit-row';
+  row.innerHTML = `<span class="subject-name">${name}</span><input type="number" min="0" max="100" step="0.1" placeholder="0-100" value="" data-subject="${name}" class="grade-input">`;
+  area.appendChild(row);
+  inp.value = '';
+  showToast(`已添加：${name}`,'success');
+}
+
+async function saveGrades(studentId){
+  showLoading();
+  try {
+    const inputs = document.querySelectorAll('.grade-input');
+    for(const input of inputs){
+      const subject = input.getAttribute('data-subject');
+      const val = input.value.trim();
+      if(val!==''){
+        const score = parseFloat(val);
+        if(isNaN(score)||score<0||score>100){showToast(`${subject} 成绩无效`,'warning');continue;}
+        await dbUpsertGrade(studentId, subject, score);
+      }
+    }
+    closeModal(); showToast('成绩保存成功！','success');
+    navigate('admin');
+  } catch(err){ showToast('保存失败：'+err.message,'error'); }
+  hideLoading();
+}
+
+// ---------- 添加学生 ----------
+function showAddStudentModal(){
+  showModal(`<div class="modal-title"><span>➕ 添加学生</span><button class="close-btn" onclick="closeModal()">&times;</button></div>
+    <p class="text-muted text-sm mb-16">管理员直接创建学生账号，初始密码由管理员设定。</p>
+    <form onsubmit="handleAddStudent(event)">
+      <div class="form-group"><label>学号 *</label><input type="text" id="add-sid" placeholder="学号" required></div>
+      <div class="form-group"><label>姓名 *</label><input type="text" id="add-name" placeholder="姓名" required></div>
+      <div class="form-group"><label>初始密码 *</label><input type="text" id="add-pwd" value="123456" required><div class="hint">学生登录后可自行修改</div></div>
+      <button type="submit" class="btn btn-primary btn-block">添加</button>
+    </form>`);
+}
+
+async function handleAddStudent(e){
+  e.preventDefault();
+  showLoading();
+  try {
+    const sid = document.getElementById('add-sid').value.trim();
+    const name = document.getElementById('add-name').value.trim();
+    const pwd = document.getElementById('add-pwd').value;
+    if(!sid||!name||!pwd){showToast('请填写完整','warning');hideLoading();return;}
+    const existing = await dbGetProfile(sid);
+    if(existing){showToast('学号已存在','error');hideLoading();return;}
+    await dbRegisterProfile(sid, name, simpleHash(pwd), DEFAULT_QUESTIONS[0], simpleHash(sid.slice(-6).toLowerCase()));
+    closeModal(); showToast(`已添加 ${name}`,'success'); navigate('admin');
+  } catch(err){ showToast('添加失败：'+err.message,'error'); }
+  hideLoading();
+}
+
+function showBatchAddModal(){
+  showModal(`<div class="modal-title"><span>📋 批量添加</span><button class="close-btn" onclick="closeModal()">&times;</button></div>
+    <p class="text-muted text-sm mb-16">每行一个：<strong>学号,姓名</strong>（逗号分隔），初始密码默认 123456</p>
+    <div class="form-group"><textarea id="batch-input" rows="10" placeholder="20260101,张三&#10;20260102,李四" style="font-family:monospace;font-size:14px"></textarea></div>
+    <button class="btn btn-primary btn-block" onclick="handleBatchAdd()">批量添加</button>`);
+}
+
+async function handleBatchAdd(){
+  showLoading();
+  try {
+    const text = document.getElementById('batch-input').value.trim();
+    if(!text){showToast('请输入信息','warning');hideLoading();return;}
+    const lines = text.split('\n').filter(l=>l.trim());
+    let added=0, skipped=0;
+    for(const line of lines){
+      const parts = line.split(/[,，\t]/).map(s=>s.trim());
+      if(parts.length<2){skipped++;continue;}
+      const [sid,name] = parts;
+      if(!sid||!name){skipped++;continue;}
+      const existing = await dbGetProfile(sid);
+      if(existing){skipped++;continue;}
+      await dbRegisterProfile(sid, name, simpleHash('123456'), DEFAULT_QUESTIONS[0], simpleHash(sid.slice(-6).toLowerCase()));
+      added++;
+    }
+    closeModal(); showToast(`完成：成功 ${added} 人，跳过 ${skipped} 人`, added>0?'success':'warning');
+    navigate('admin');
+  } catch(err){ showToast('批量添加失败：'+err.message,'error'); }
+  hideLoading();
+}
+
+// ---------- 删除学生 ----------
+function deleteStudent(sid, name){
+  showModal(`<div class="modal-title"><span>⚠️ 确认删除</span><button class="close-btn" onclick="closeModal()">&times;</button></div>
+    <p style="margin-bottom:20px">确定删除 <strong>${name}</strong>（${sid}）？该操作不可恢复。</p>
+    <div class="btn-group"><button class="btn btn-danger" onclick="confirmDelete('${sid}')">确认删除</button><button class="btn btn-secondary" onclick="closeModal()">取消</button></div>`);
+}
+async function confirmDelete(sid){
+  showLoading();
+  try {
+    await dbDeleteProfile(sid);
+    closeModal(); showToast('已删除','info'); navigate('admin');
+  } catch(err){ showToast('删除失败：'+err.message,'error'); }
+  hideLoading();
+}
+
+// ---------- 修改管理员密码 ----------
+function showChangePwdModal(){
+  showModal(`<div class="modal-title"><span>🔑 修改管理员密码</span><button class="close-btn" onclick="closeModal()">&times;</button></div>
+    <form onsubmit="handleChangePwd(event)">
+      <div class="form-group"><label>当前密码</label><input type="password" id="old-pwd" required></div>
+      <div class="form-group"><label>新密码</label><input type="password" id="new-pwd" placeholder="至少6位" required></div>
+      <div class="form-group"><label>确认新密码</label><input type="password" id="confirm-pwd" required></div>
+      <button type="submit" class="btn btn-primary btn-block">确认修改</button>
+    </form>`);
+}
+function handleChangePwd(e){
+  e.preventDefault();
+  const old = document.getElementById('old-pwd').value;
+  const cur = localStorage.getItem('pku_admin_pwd') || 'admin123';
+  const np = document.getElementById('new-pwd').value;
+  const cp = document.getElementById('confirm-pwd').value;
+  if(old!==cur){showToast('当前密码错误','error');return;}
+  if(np.length<6){showToast('至少6位','warning');return;}
+  if(np!==cp){showToast('两次不一致','warning');return;}
+  localStorage.setItem('pku_admin_pwd', np);
+  closeModal(); showToast('密码已修改','success');
+}
+
+// ---------- 导出数据 ----------
+async function exportData(){
+  showLoading();
+  try {
+    const students = await dbGetAllStudents();
+    const grades = await dbGetAllGrades();
+    const blob = new Blob([JSON.stringify({exportDate:new Date().toISOString(),students,grades},null,2)],{type:'application/json'});
+    const a = document.createElement('a'); a.href=URL.createObjectURL(blob);
+    a.download = `护理一班成绩_${new Date().toLocaleDateString('zh-CN')}.json`; a.click();
+    URL.revokeObjectURL(a.href);
+    showToast('导出成功','success');
+  } catch(err){ showToast('导出失败：'+err.message,'error'); }
+  hideLoading();
+}
+
+// ---------- 首页搜索 ----------
+function handleHomeSearch(){
+  const kw = document.getElementById('home-search').value.trim();
+  if(!kw){showToast('请输入学号或姓名','warning');return;}
+  const sess = getSession();
+  if(!sess){showToast('请先登录','info');navigate('login');return;}
+  if(sess.role==='admin'){navigate('admin');}
+  else{navigate('dashboard');}
+}
+
+// =====================================================
+//  首次配置向导
+// =====================================================
+function pageSetup(){
+  return `<div class="page"><div class="card setup-box">
+    <div class="card-title"><span class="icon">🔧</span> 系统配置</div>
+    <p class="text-muted mb-24">本系统使用 <strong>Supabase</strong> 云端数据库。首次使用请按以下步骤配置：</p>
+    <div class="step"><h4>第一步：创建 Supabase 项目</h4>
+      <p>前往 <a href="https://supabase.com" target="_blank">supabase.com</a> 注册并创建一个新项目（免费），记下项目 URL 和 anon public key。</p></div>
+    <div class="step"><h4>第二步：创建数据表</h4>
+      <p>在 Supabase 控制台的 <strong>SQL Editor</strong> 中执行以下脚本：</p>
+      <div style="margin-top:8px"><button class="copy-btn" onclick="copySQL()">📋 复制 SQL</button></div>
+      <div class="sql-block" id="sql-block">-- 用户表
+CREATE TABLE profiles (
+  student_id TEXT PRIMARY KEY,
+  name TEXT NOT NULL,
+  password_hash TEXT NOT NULL,
+  security_question TEXT,
+  security_answer_hash TEXT,
+  role TEXT DEFAULT 'student',
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- 成绩表
+CREATE TABLE grades (
+  student_id TEXT NOT NULL REFERENCES profiles(student_id) ON DELETE CASCADE,
+  subject TEXT NOT NULL,
+  score NUMERIC(5,1),
+  PRIMARY KEY (student_id, subject)
+);
+
+-- 关闭权限检查（班级内部使用）
+ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
+ALTER TABLE grades ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "allow_all" ON profiles FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "allow_all" ON grades FOR ALL USING (true) WITH CHECK (true);</div>
+    </div>
+    <div class="step"><h4>第三步：填写配置</h4>
+      <p>将你的 Supabase 项目信息填入下方：</p></div>
+    <form onsubmit="saveSetupConfig(event)" style="margin-top:16px">
+      <div class="form-group"><label>Supabase Project URL</label>
+        <input type="url" id="setup-url" placeholder="https://xxxxx.supabase.co" required></div>
+      <div class="form-group"><label>Anon Public Key</label>
+        <input type="text" id="setup-key" placeholder="eyJhbGciOi..." required></div>
+      <button type="submit" class="btn btn-primary btn-block">✅ 保存配置并启动</button>
+    </form>
+  </div></div>`;
+}
+
+function copySQL(){
+  const sql = document.getElementById('sql-block').textContent;
+  navigator.clipboard.writeText(sql).then(()=>showToast('SQL 已复制到剪贴板','success'));
+}
+
+function saveSetupConfig(e){
+  e.preventDefault();
+  const url = document.getElementById('setup-url').value.trim();
+  const key = document.getElementById('setup-key').value.trim();
+  if(!url||!key){showToast('请填写完整','warning');return;}
+  saveCfg({url,key});
+  initSupabase();
+}
+
+// =====================================================
+//  初始化
+// =====================================================
+function initSupabase(){
+  const cfg = getCfg();
+  if(!cfg){ navigate('setup'); return; }
+  try {
+    supabase = window.supabase.createClient(cfg.url, cfg.key);
+    navigate('home');
+  } catch(err){
+    console.error(err);
+    showToast('Supabase 连接失败：'+err.message,'error');
+    navigate('setup');
+  }
+}
+
+// 启动
+(function init(){
+  const cfg = getCfg();
+  if(cfg){ initSupabase(); }
+  else { navigate('setup'); }
+})();
+</script>
+</body>
+</html>
