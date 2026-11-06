@@ -986,16 +986,31 @@ function initSupabase(){
   }
 }
 
-// 启动
-(function init(){
-  // 预配置 Supabase（由管理员部署时写入）
+// 启动 - 确保 DOM 和 Supabase SDK 都加载完成后再执行
+function doInit() {
+  if (typeof window.supabase === 'undefined') {
+    document.getElementById('app').innerHTML = '<div class="empty-state"><div class="empty-icon">⚠️</div><p>Supabase SDK 加载失败，请检查网络连接后刷新页面</p></div>';
+    return;
+  }
   const PRE_CFG = {
     url: 'https://tkewqjxdvkgpkxahlccj.supabase.co',
     key: 'sb_publishable_WSjTQDxFp4JaL5XPR_rMyw_gAxHrQUw'
   };
   saveCfg(PRE_CFG);
-  initSupabase();
-})();
+  try {
+    supabase = window.supabase.createClient(PRE_CFG.url, PRE_CFG.key);
+    navigate('home');
+  } catch(err) {
+    console.error('Init error:', err);
+    document.getElementById('app').innerHTML = '<div class="empty-state"><div class="empty-icon">⚠️</div><p>初始化失败：' + err.message + '</p></div>';
+  }
+}
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', doInit);
+} else {
+  doInit();
+}
 </script>
 </body>
 </html>
