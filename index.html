@@ -988,9 +988,13 @@ function initSupabase(){
 
 // 启动
 (function init(){
-  const cfg = getCfg();
-  if(cfg){ initSupabase(); }
-  else { navigate('setup'); }
+  // 预配置 Supabase（由管理员部署时写入）
+  const PRE_CFG = {
+    url: 'https://tkewqjxdvkgpkxahlccj.supabase.co',
+    key: 'sb_publishable_WSjTQDxFp4JaL5XPR_rMyw_gAxHrQUw'
+  };
+  saveCfg(PRE_CFG);
+  initSupabase();
 })();
 </script>
 </body>
