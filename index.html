@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>北京大学2026级护理一班 · 成绩查询系统</title>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" onerror="document.getElementById('app').innerHTML='<div class=\\'empty-state\\'><div class=\\'empty-icon\\'>⚠️</div><p>Supabase SDK 加载失败，请检查网络或刷新页面</p><button class=\\'btn btn-primary\\' onclick=\\'location.reload()\\'>刷新</button></div>'"></script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 :root{
@@ -988,8 +988,9 @@ function initSupabase(){
 
 // 启动 - 确保 DOM 和 Supabase SDK 都加载完成后再执行
 function doInit() {
+  console.log('doInit called, window.supabase:', typeof window.supabase);
   if (typeof window.supabase === 'undefined') {
-    document.getElementById('app').innerHTML = '<div class="empty-state"><div class="empty-icon">⚠️</div><p>Supabase SDK 加载失败，请检查网络连接后刷新页面</p></div>';
+    document.getElementById('app').innerHTML = '<div class="empty-state"><div class="empty-icon">⚠️</div><p>Supabase SDK 未加载，可能是网络问题</p><button class="btn btn-primary" onclick="location.reload()" style="margin-top:16px">刷新页面</button></div>';
     return;
   }
   const PRE_CFG = {
@@ -999,6 +1000,7 @@ function doInit() {
   saveCfg(PRE_CFG);
   try {
     supabase = window.supabase.createClient(PRE_CFG.url, PRE_CFG.key);
+    console.log('Supabase client created, navigating to home');
     navigate('home');
   } catch(err) {
     console.error('Init error:', err);
@@ -1006,10 +1008,23 @@ function doInit() {
   }
 }
 
+// 等待 Supabase SDK 加载，最多等 15 秒
+let initAttempts = 0;
+function waitForSupabase() {
+  initAttempts++;
+  if (typeof window.supabase !== 'undefined') {
+    doInit();
+  } else if (initAttempts < 30) {
+    setTimeout(waitForSupabase, 500);
+  } else {
+    document.getElementById('app').innerHTML = '<div class="empty-state"><div class="empty-icon">⚠️</div><p>Supabase SDK 加载超时，请检查网络连接</p><button class="btn btn-primary" onclick="location.reload()" style="margin-top:16px">刷新页面</button></div>';
+  }
+}
+
 if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', doInit);
+  document.addEventListener('DOMContentLoaded', waitForSupabase);
 } else {
-  doInit();
+  waitForSupabase();
 }
 </script>
 </body>
